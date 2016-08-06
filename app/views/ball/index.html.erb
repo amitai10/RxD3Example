@@ -1,7 +1,9 @@
 <div ng-app="myApp">
-  <div ng-controller="positionCtrl" ng-init="init()">
-    {{text}}
+  <div ng-controller="ballCtrl" ng-init="init()">
+    x: {{x}} y: {{y}}
+    <h1>Ball</h1>
+    <button ng-click="start()">Start</button>
+    <button ng-click="stop()">Stop</button>
+    <svg></svg>
   </div>
-  <h1>Graph</h1>
-  <svg></svg>
 </div>

@@ -4,4 +4,5 @@ Rails.application.routes.draw do
   root 'position#index'
 
   get 'position', to: 'position#pos'
+  get 'ball', to: 'ball#index'
 end

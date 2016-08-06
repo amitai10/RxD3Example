@@ -1,26 +1,28 @@
 /*globals angular, alert, App */
-angular.module('myApp', []);
 angular.module('myApp').controller('positionCtrl', function($scope, $http) {
 
     'use strict';
 
     $scope.init = function() {
+      $scope.x = 50;
+      $scope.y = 50;
+
         $scope.pauser = new Rx.Subject();
         var counter = Rx.Observable.interval(100)
           .pausable($scope.pauser)
           .flatMap(function (i) {
-            return Rx.Observable.fromPromise($http.get('position.json'))
+            return Rx.Observable.fromPromise($http.get('position.json', {params: {x: $scope.x, y: $scope.y}}))
           })
 
 
         counter.subscribe(function(response) {
-            $scope.x = response.data.y;
-            $scope.y = response.data.z;
+            $scope.x = response.data.x;
+            $scope.y = response.data.y;
 
             updatesOverTime.push({
                     x: new Date(),
-                    y: response.data.y,
-                    z: response.data.z
+                    y: response.data.x,
+                    z: response.data.y
                 });
 
             if (updatesOverTime.length > 20)  {
