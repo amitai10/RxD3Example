@@ -5,24 +5,42 @@ angular.module('myApp').controller('positionCtrl', function($scope, $http) {
     'use strict';
 
     $scope.init = function() {
+        $scope.pauser = new Rx.Subject();
         var counter = Rx.Observable.interval(100)
+          .pausable($scope.pauser)
           .flatMap(function (i) {
             return Rx.Observable.fromPromise($http.get('position.json'))
           })
 
+
         counter.subscribe(function(response) {
-            $scope.text = response.data.y;
+            $scope.x = response.data.y;
+            $scope.y = response.data.z;
 
             updatesOverTime.push({
                     x: new Date(),
                     y: response.data.y,
                     z: response.data.z
                 });
+
+            if (updatesOverTime.length > 20)  {
+                updatesOverTime.shift();
+            }
             update(updatesOverTime);
 
             $scope.$apply();
         })
+
+          $scope.pauser.onNext(true);
     };
+
+    $scope.start = function () {
+      $scope.pauser.onNext(true);
+    }
+
+    $scope.stop = function () {
+      $scope.pauser.onNext(false);
+    }
 
       var updatesOverTime = [];
 
@@ -42,7 +60,7 @@ angular.module('myApp').controller('positionCtrl', function($scope, $http) {
         var xRange = d3.time.scale().range([margins.left, width - margins.right])
             .domain([new Date(), new Date()]);
         var yRange = d3.scale.linear().range([height - margins.bottom, margins.top])
-            .domain([0, 0]);
+            .domain([0, 100]);
         var xAxis = d3.svg.axis()
             .scale(xRange)
             .tickSize(5)
@@ -125,13 +143,13 @@ angular.module('myApp').controller('positionCtrl', function($scope, $http) {
       // Update the ranges of the chart to reflect the new data
       if (updates.length > 0)   {
           xRange.domain(d3.extent(updates, function(d) { return d.x; }));
-          yRange.domain([d3.min(updates, function(d) { return d.y; }),
-                         d3.max(updates, function(d) { return d.y; })]);
+          // yRange.domain([d3.min(updates, function(d) { return d.y; }),
+          //                d3.max(updates, function(d) { return d.y; })]);
       }
 
       // Until we have filled up our data window, we just keep adding data
       // points to the end of the chart.
-      if (updates.length <1000) {
+      if (updates.length <20) {
           line.transition()
               .ease("linear")
               .attr("d", lineFunc(updates));
@@ -148,6 +166,8 @@ angular.module('myApp').controller('positionCtrl', function($scope, $http) {
       // start of the chart, and move the data over so the chart looks
       // like it is scrolling forwards in time
       else    {
+
+        var samplingTime = 20;
           // Calculate the amount of translation on the x axis which equates to the
           // time between two samples
           var xTranslation = xRange(updates[0].x) - xRange(updates[1].x);
@@ -163,7 +183,7 @@ angular.module('myApp').controller('positionCtrl', function($scope, $http) {
               .ease("linear")
               .attr("transform", "translate(" + xTranslation + ", 0)");
           line2
-              .attr("d", lineFunc(updates))
+              .attr("d", lineFunc2(updates))
               .attr("transform", null)
               .transition()
               .duration(samplingTime - 20)
